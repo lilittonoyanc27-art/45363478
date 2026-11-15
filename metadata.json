@@ -1,0 +1,6 @@
+{
+  "name": "RAZMIK Y GAYANE — ¡HABLA Y GANA!",
+  "description": "Aventura interactiva y competencia educativa de español para Razmik y Gayane con cuatro mundos, teoría en armenio, audio y 16 juegos.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}

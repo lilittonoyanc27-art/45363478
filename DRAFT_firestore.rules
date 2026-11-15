@@ -1,0 +1,375 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function isValidSha256(h) {
+      return h is string && h.size() == 64 && h.matches('^[a-f0-9]{64}$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    function isBootstrappedAdminEmail() {
+      return isVerifiedUser() && request.auth.token.email == 'lilit.tonoyanc27@gmail.com';
+    }
+    function isAdmin() {
+      return isBootstrappedAdminEmail() || (isVerifiedUser() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+    function hasUserDoc() {
+      return isVerifiedUser() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function hasStudentRole(studentId) {
+      return isVerifiedUser() && (studentId == 'razmik' || studentId == 'gayane') && hasUserDoc() && myRole() == studentId;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidAdmin(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'email', 'createdAt'])
+        && data.uid is string && data.uid == request.auth.uid && data.uid.size() <= 128
+        && data.email is string && data.email.size() <= 200
+        && data.createdAt == request.time;
+    }
+
+    function isValidAccessCode(data) {
+      return data.keys().hasAll(['role', 'updatedBy', 'createdAt'])
+        && data.keys().hasOnly(['role', 'updatedBy', 'createdAt'])
+        && (data.role == 'razmik' || data.role == 'gayane')
+        && data.updatedBy is string && data.updatedBy == request.auth.uid && data.updatedBy.size() <= 128
+        && data.createdAt == request.time;
+    }
+
+    function isValidTeacherCodesSettings(data) {
+      return data.keys().hasAll(['razmikCodeHash', 'gayaneCodeHash', 'razmikCodeLabel', 'gayaneCodeLabel', 'updatedAt'])
+        && data.keys().hasOnly(['razmikCodeHash', 'gayaneCodeHash', 'razmikCodeLabel', 'gayaneCodeLabel', 'updatedAt'])
+        && isValidSha256(data.razmikCodeHash)
+        && isValidSha256(data.gayaneCodeHash)
+        && data.razmikCodeLabel is string && data.razmikCodeLabel.size() >= 4 && data.razmikCodeLabel.size() <= 32
+        && data.gayaneCodeLabel is string && data.gayaneCodeLabel.size() >= 4 && data.gayaneCodeLabel.size() <= 32
+        && data.updatedAt == request.time;
+    }
+
+    function isValidUserProfile(data, uid) {
+      return data.keys().hasAll(['uid', 'role', 'displayName', 'codeHash', 'parentalConsentGranted', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'role', 'displayName', 'codeHash', 'parentalConsentGranted', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid == uid && data.uid.size() <= 128
+        && (data.role == 'razmik' || data.role == 'gayane' || data.role == 'profesor')
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60
+        && data.codeHash is string && data.codeHash.size() <= 64
+        && data.parentalConsentGranted is bool
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidStudentProgress(data, studentId) {
+      return data.keys().hasAll([
+          'studentId', 'lastUpdatedByUid', 'name', 'points', 'wins', 'correctAnswers', 'errors',
+          'streak', 'bestStreak', 'totalTimeSec', 'gamesCompleted', 'learnedWords', 'hardWords',
+          'completedLessons', 'completedMissions', 'bestTimes', 'medals', 'dailyCompletedDates',
+          'lastWorld', 'lastSection', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'studentId', 'lastUpdatedByUid', 'name', 'points', 'wins', 'correctAnswers', 'errors',
+          'streak', 'bestStreak', 'totalTimeSec', 'gamesCompleted', 'learnedWords', 'hardWords',
+          'completedLessons', 'completedMissions', 'bestTimes', 'medals', 'dailyCompletedDates',
+          'lastWorld', 'lastSection', 'updatedAt'
+        ])
+        && data.studentId == studentId && (studentId == 'razmik' || studentId == 'gayane')
+        && data.lastUpdatedByUid is string && data.lastUpdatedByUid == request.auth.uid && data.lastUpdatedByUid.size() <= 128
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 40
+        && data.points is number && data.points >= 0 && data.points <= 1000000
+        && data.wins is number && data.wins >= 0 && data.wins <= 100000
+        && data.correctAnswers is number && data.correctAnswers >= 0 && data.correctAnswers <= 500000
+        && data.errors is number && data.errors >= 0 && data.errors <= 500000
+        && data.streak is number && data.streak >= 0 && data.streak <= 10000
+        && data.bestStreak is number && data.bestStreak >= 0 && data.bestStreak <= 10000
+        && data.totalTimeSec is number && data.totalTimeSec >= 0 && data.totalTimeSec <= 10000000
+        && data.gamesCompleted is number && data.gamesCompleted >= 0 && data.gamesCompleted <= 100000
+        && data.learnedWords is list && data.learnedWords.size() <= 500 && (data.learnedWords.size() == 0 || data.learnedWords[0] is string)
+        && data.hardWords is list && data.hardWords.size() <= 500 && (data.hardWords.size() == 0 || data.hardWords[0] is string)
+        && data.completedLessons is list && data.completedLessons.size() <= 500 && (data.completedLessons.size() == 0 || data.completedLessons[0] is string)
+        && data.completedMissions is list && data.completedMissions.size() <= 50 && (data.completedMissions.size() == 0 || data.completedMissions[0] is string)
+        && data.bestTimes is map
+        && data.medals is list && data.medals.size() <= 30 && (data.medals.size() == 0 || data.medals[0] is string)
+        && data.dailyCompletedDates is list && data.dailyCompletedDates.size() <= 500 && (data.dailyCompletedDates.size() == 0 || data.dailyCompletedDates[0] is string)
+        && (data.lastWorld in ['aeropuerto', 'hotel', 'restaurante', 'supermercado'])
+        && data.lastSection is string && data.lastSection.size() <= 40
+        && data.updatedAt == request.time;
+    }
+
+    function isValidLeaderboard(data, studentId) {
+      return data.keys().hasAll([
+          'studentId', 'name', 'gamesCompleted', 'correctAnswers', 'totalQuestions',
+          'avgAccuracyPercent', 'bestTimeSec', 'totalPoints', 'wins', 'updatedByUid', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'studentId', 'name', 'gamesCompleted', 'correctAnswers', 'totalQuestions',
+          'avgAccuracyPercent', 'bestTimeSec', 'totalPoints', 'wins', 'updatedByUid', 'updatedAt'
+        ])
+        && data.studentId == studentId && (studentId == 'razmik' || studentId == 'gayane')
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 40
+        && data.gamesCompleted is number && data.gamesCompleted >= 0 && data.gamesCompleted <= 100000
+        && data.correctAnswers is number && data.correctAnswers >= 0 && data.correctAnswers <= 500000
+        && data.totalQuestions is number && data.totalQuestions >= 0 && data.totalQuestions <= 500000
+        && data.avgAccuracyPercent is number && data.avgAccuracyPercent >= 0 && data.avgAccuracyPercent <= 100
+        && data.bestTimeSec is number && data.bestTimeSec >= 0 && data.bestTimeSec <= 100000
+        && data.totalPoints is number && data.totalPoints >= 0 && data.totalPoints <= 1000000
+        && data.wins is number && data.wins >= 0 && data.wins <= 100000
+        && data.updatedByUid is string && data.updatedByUid == request.auth.uid && data.updatedByUid.size() <= 128
+        && data.updatedAt == request.time;
+    }
+
+    function isValidGameSession(data, sessionId) {
+      return data.keys().hasAll([
+          'id', 'studentId', 'ownerUid', 'studentName', 'gameId', 'gameTitleEs', 'world',
+          'totalQuestions', 'correctCount', 'incorrectCount', 'score', 'accuracyPercent',
+          'durationSec', 'answersSummary', 'submittedToTeacher', 'submittedAt', 'teacherNote',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'studentId', 'ownerUid', 'studentName', 'gameId', 'gameTitleEs', 'world',
+          'totalQuestions', 'correctCount', 'incorrectCount', 'score', 'accuracyPercent',
+          'durationSec', 'answersSummary', 'submittedToTeacher', 'submittedAt', 'teacherNote',
+          'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == sessionId && data.id.size() <= 128
+        && (data.studentId == 'razmik' || data.studentId == 'gayane')
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 40
+        && data.gameId is string && data.gameId.size() >= 1 && data.gameId.size() <= 50
+        && data.gameTitleEs is string && data.gameTitleEs.size() >= 1 && data.gameTitleEs.size() <= 120
+        && (data.world in ['aeropuerto', 'hotel', 'restaurante', 'supermercado', 'todos'])
+        && data.totalQuestions is number && data.totalQuestions >= 0 && data.totalQuestions <= 100
+        && data.correctCount is number && data.correctCount >= 0 && data.correctCount <= 100
+        && data.incorrectCount is number && data.incorrectCount >= 0 && data.incorrectCount <= 100
+        && data.score is number && data.score >= 0 && data.score <= 10000
+        && data.accuracyPercent is number && data.accuracyPercent >= 0 && data.accuracyPercent <= 100
+        && data.durationSec is number && data.durationSec >= 0 && data.durationSec <= 7200
+        && data.answersSummary is list && data.answersSummary.size() <= 35 && (data.answersSummary.size() == 0 || data.answersSummary[0] is map)
+        && data.submittedToTeacher is bool
+        && data.submittedAt is string && data.submittedAt.size() <= 64
+        && data.teacherNote is string && data.teacherNote.size() <= 500
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    function isValidVoiceRecording(data, recordingId) {
+      return data.keys().hasAll([
+          'id', 'studentId', 'ownerUid', 'studentName', 'world', 'gameId', 'questionEs',
+          'transcriptEs', 'aiSuggestionEs', 'storagePath', 'hasFirestoreAudio', 'durationSec',
+          'mimeType', 'status', 'verdict', 'teacherComment', 'teacherPoints',
+          'createdAt', 'updatedAt', 'reviewedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'studentId', 'ownerUid', 'studentName', 'world', 'gameId', 'questionEs',
+          'transcriptEs', 'aiSuggestionEs', 'storagePath', 'hasFirestoreAudio', 'durationSec',
+          'mimeType', 'status', 'verdict', 'teacherComment', 'teacherPoints',
+          'createdAt', 'updatedAt', 'reviewedAt'
+        ])
+        && data.id is string && data.id == recordingId && data.id.size() <= 128
+        && (data.studentId == 'razmik' || data.studentId == 'gayane')
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.studentName is string && data.studentName.size() >= 1 && data.studentName.size() <= 40
+        && (data.world in ['aeropuerto', 'hotel', 'restaurante', 'supermercado', 'todos'])
+        && data.gameId is string && data.gameId.size() >= 1 && data.gameId.size() <= 50
+        && data.questionEs is string && data.questionEs.size() >= 1 && data.questionEs.size() <= 400
+        && data.transcriptEs is string && data.transcriptEs.size() <= 1000
+        && data.aiSuggestionEs is string && data.aiSuggestionEs.size() <= 400
+        && data.storagePath is string && data.storagePath.size() <= 250
+        && data.hasFirestoreAudio is bool
+        && data.durationSec is number && data.durationSec >= 0 && data.durationSec <= 300
+        && data.mimeType is string && data.mimeType.size() <= 60
+        && (data.status == 'pending' || data.status == 'reviewed')
+        && (data.verdict in ['none', 'correcto', 'necesita_practicar'])
+        && data.teacherComment is string && data.teacherComment.size() <= 500
+        && data.teacherPoints is number && data.teacherPoints >= 0 && data.teacherPoints <= 100
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time
+        && data.reviewedAt is string && data.reviewedAt.size() <= 64;
+    }
+
+    function isValidRecordingAudio(data, recordingId) {
+      return data.keys().hasAll(['recordingId', 'studentId', 'ownerUid', 'audioBase64', 'mimeType', 'createdAt'])
+        && data.keys().hasOnly(['recordingId', 'studentId', 'ownerUid', 'audioBase64', 'mimeType', 'createdAt'])
+        && data.recordingId is string && data.recordingId == recordingId && data.recordingId.size() <= 128
+        && (data.studentId == 'razmik' || data.studentId == 'gayane')
+        && data.ownerUid is string && data.ownerUid == request.auth.uid && data.ownerUid.size() <= 128
+        && data.audioBase64 is string && data.audioBase64.size() >= 1 && data.audioBase64.size() <= 650000
+        && data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 60
+        && data.createdAt == request.time;
+    }
+
+    // 4. Collection Rules
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isBootstrappedAdminEmail() && request.auth.uid == uid;
+      allow list: if false;
+      allow create: if isValidId(uid) && isBootstrappedAdminEmail() && request.auth.uid == uid && isValidAdmin(incoming());
+      allow update, delete: if false;
+    }
+
+    match /access_codes/{codeHash} {
+      allow get: if isValidSha256(codeHash) && isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if isValidSha256(codeHash) && isAdmin() && isValidAccessCode(incoming());
+      allow delete: if isValidSha256(codeHash) && isAdmin();
+    }
+
+    match /teacher_settings/{settingId} {
+      allow get: if isValidId(settingId) && isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if isValidId(settingId) && isAdmin() && isValidTeacherCodesSettings(incoming());
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+
+    match /users/{uid} {
+      allow get: if isValidId(uid) && isVerifiedUser() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(uid) && isVerifiedUser() && request.auth.uid == uid
+        && isValidUserProfile(incoming(), uid)
+        && incoming().createdAt == request.time
+        && (
+          (incoming().role == 'profesor' && isBootstrappedAdminEmail()) ||
+          (
+            (incoming().role == 'razmik' || incoming().role == 'gayane')
+            && isValidSha256(incoming().codeHash)
+            && exists(/databases/$(database)/documents/access_codes/$(incoming().codeHash))
+            && get(/databases/$(database)/documents/access_codes/$(incoming().codeHash)).data.role == incoming().role
+          )
+        );
+      allow update: if isValidId(uid) && isVerifiedUser()
+        && isValidUserProfile(incoming(), uid)
+        && incoming().createdAt == existing().createdAt
+        && incoming().uid == existing().uid
+        && (
+          isAdmin() ||
+          (
+            request.auth.uid == uid
+            && incoming().role == existing().role
+            && incoming().codeHash == existing().codeHash
+            && incoming().diff(existing()).affectedKeys().hasOnly(['parentalConsentGranted', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(uid) && isAdmin();
+    }
+
+    match /student_progress/{studentId} {
+      allow get: if isValidId(studentId) && (isAdmin() || hasStudentRole(studentId));
+      allow list: if isAdmin();
+      allow create: if isValidId(studentId)
+        && isValidStudentProgress(incoming(), studentId)
+        && (isAdmin() || hasStudentRole(studentId));
+      allow update: if isValidId(studentId)
+        && isValidStudentProgress(incoming(), studentId)
+        && incoming().studentId == existing().studentId
+        && (isAdmin() || hasStudentRole(studentId));
+      allow delete: if isValidId(studentId) && (isAdmin() || hasStudentRole(studentId));
+    }
+
+    match /leaderboard/{studentId} {
+      allow get: if isValidId(studentId) && isVerifiedUser() && (studentId == 'razmik' || studentId == 'gayane');
+      allow list: if false;
+      allow create, update: if isValidId(studentId)
+        && isValidLeaderboard(incoming(), studentId)
+        && (isAdmin() || hasStudentRole(studentId));
+      allow delete: if isValidId(studentId) && (isAdmin() || hasStudentRole(studentId));
+    }
+
+    match /game_sessions/{sessionId} {
+      allow get: if isValidId(sessionId) && (
+        isAdmin() ||
+        (isVerifiedUser() && existing().ownerUid == request.auth.uid) ||
+        hasStudentRole(existing().studentId)
+      );
+      allow list: if isVerifiedUser() && (resource.data.ownerUid == request.auth.uid || isBootstrappedAdminEmail());
+      allow create: if isValidId(sessionId)
+        && isVerifiedUser()
+        && isValidGameSession(incoming(), sessionId)
+        && incoming().createdAt == request.time
+        && incoming().ownerUid == request.auth.uid
+        && incoming().teacherNote == ''
+        && hasStudentRole(incoming().studentId);
+      allow update: if isValidId(sessionId)
+        && isVerifiedUser()
+        && isValidGameSession(incoming(), sessionId)
+        && incoming().id == existing().id
+        && incoming().studentId == existing().studentId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['teacherNote', 'updatedAt'])) ||
+          (
+            hasStudentRole(existing().studentId)
+            && existing().ownerUid == request.auth.uid
+            && incoming().submittedToTeacher == true
+            && incoming().diff(existing()).affectedKeys().hasOnly(['submittedToTeacher', 'submittedAt', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(sessionId) && (isAdmin() || (hasStudentRole(existing().studentId) && existing().ownerUid == request.auth.uid));
+    }
+
+    match /voice_recordings/{recordingId} {
+      allow get: if isValidId(recordingId) && (
+        isAdmin() ||
+        (isVerifiedUser() && existing().ownerUid == request.auth.uid) ||
+        hasStudentRole(existing().studentId)
+      );
+      allow list: if isVerifiedUser() && (resource.data.ownerUid == request.auth.uid || isBootstrappedAdminEmail());
+      allow create: if isValidId(recordingId)
+        && isVerifiedUser()
+        && isValidVoiceRecording(incoming(), recordingId)
+        && incoming().createdAt == request.time
+        && incoming().ownerUid == request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().verdict == 'none'
+        && incoming().teacherComment == ''
+        && incoming().teacherPoints == 0
+        && incoming().reviewedAt == ''
+        && hasStudentRole(incoming().studentId);
+      allow update: if isValidId(recordingId)
+        && isVerifiedUser()
+        && isValidVoiceRecording(incoming(), recordingId)
+        && incoming().id == existing().id
+        && incoming().studentId == existing().studentId
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'verdict', 'teacherComment', 'teacherPoints', 'reviewedAt', 'updatedAt']);
+      allow delete: if isValidId(recordingId) && (isAdmin() || (hasStudentRole(existing().studentId) && existing().ownerUid == request.auth.uid));
+    }
+
+    match /recordings_audio/{recordingId} {
+      allow get: if isValidId(recordingId) && (
+        isAdmin() ||
+        (isVerifiedUser() && existing().ownerUid == request.auth.uid) ||
+        hasStudentRole(existing().studentId)
+      );
+      allow list: if false;
+      allow create: if isValidId(recordingId)
+        && isVerifiedUser()
+        && isValidRecordingAudio(incoming(), recordingId)
+        && hasStudentRole(incoming().studentId)
+        && exists(/databases/$(database)/documents/voice_recordings/$(recordingId));
+      allow update: if false;
+      allow delete: if isValidId(recordingId) && (isAdmin() || (hasStudentRole(existing().studentId) && existing().ownerUid == request.auth.uid));
+    }
+  }
+}

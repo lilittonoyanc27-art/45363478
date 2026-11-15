@@ -1,0 +1,284 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Verified teacher administrator record.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "AccessCodeRecord": {
+      "title": "AccessCodeRecord",
+      "description": "Hashed teacher-issued student access code mapping to a student role.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["razmik", "gayane"] },
+        "updatedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "updatedBy", "createdAt"]
+    },
+    "TeacherCodesSettings": {
+      "title": "TeacherCodesSettings",
+      "description": "Teacher-only storage of active student access codes and global classroom config.",
+      "type": "object",
+      "properties": {
+        "razmikCodeHash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "minLength": 64, "maxLength": 64 },
+        "gayaneCodeHash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "minLength": 64, "maxLength": 64 },
+        "razmikCodeLabel": { "type": "string", "minLength": 4, "maxLength": 32 },
+        "gayaneCodeLabel": { "type": "string", "minLength": 4, "maxLength": 32 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["razmikCodeHash", "gayaneCodeHash", "razmikCodeLabel", "gayaneCodeLabel", "updatedAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user role binding verified against teacher email or access code.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "role": { "type": "string", "enum": ["razmik", "gayane", "profesor"] },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "codeHash": { "type": "string", "maxLength": 64 },
+        "parentalConsentGranted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "role", "displayName", "codeHash", "parentalConsentGranted", "createdAt", "updatedAt"]
+    },
+    "StudentProgress": {
+      "title": "StudentProgress",
+      "description": "Cloud-synced individual learning progress for Razmik or Gayane.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "enum": ["razmik", "gayane"] },
+        "lastUpdatedByUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "points": { "type": "number" },
+        "wins": { "type": "number" },
+        "correctAnswers": { "type": "number" },
+        "errors": { "type": "number" },
+        "streak": { "type": "number" },
+        "bestStreak": { "type": "number" },
+        "totalTimeSec": { "type": "number" },
+        "gamesCompleted": { "type": "number" },
+        "learnedWords": { "type": "array" },
+        "hardWords": { "type": "array" },
+        "completedLessons": { "type": "array" },
+        "completedMissions": { "type": "array" },
+        "bestTimes": { "type": "object" },
+        "medals": { "type": "array" },
+        "dailyCompletedDates": { "type": "array" },
+        "lastWorld": { "type": "string", "enum": ["aeropuerto", "hotel", "restaurante", "supermercado"] },
+        "lastSection": { "type": "string", "maxLength": 40 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "studentId",
+        "lastUpdatedByUid",
+        "name",
+        "points",
+        "wins",
+        "correctAnswers",
+        "errors",
+        "streak",
+        "bestStreak",
+        "totalTimeSec",
+        "gamesCompleted",
+        "learnedWords",
+        "hardWords",
+        "completedLessons",
+        "completedMissions",
+        "bestTimes",
+        "medals",
+        "dailyCompletedDates",
+        "lastWorld",
+        "lastSection",
+        "updatedAt"
+      ]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Aggregated RAZMIK VS GAYANE competition stats without private answers or recordings.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "enum": ["razmik", "gayane"] },
+        "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "gamesCompleted": { "type": "number" },
+        "correctAnswers": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "avgAccuracyPercent": { "type": "number" },
+        "bestTimeSec": { "type": "number" },
+        "totalPoints": { "type": "number" },
+        "wins": { "type": "number" },
+        "updatedByUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "studentId",
+        "name",
+        "gamesCompleted",
+        "correctAnswers",
+        "totalQuestions",
+        "avgAccuracyPercent",
+        "bestTimeSec",
+        "totalPoints",
+        "wins",
+        "updatedByUid",
+        "updatedAt"
+      ]
+    },
+    "GameSession": {
+      "title": "GameSession",
+      "description": "Completed quiz or game session saved automatically and optionally submitted to teacher.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-zA-Z0-9_\\-]+$", "minLength": 1, "maxLength": 128 },
+        "studentId": { "type": "string", "enum": ["razmik", "gayane"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "studentName": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "gameId": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "gameTitleEs": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "world": { "type": "string", "enum": ["aeropuerto", "hotel", "restaurante", "supermercado", "todos"] },
+        "totalQuestions": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "incorrectCount": { "type": "number" },
+        "score": { "type": "number" },
+        "accuracyPercent": { "type": "number" },
+        "durationSec": { "type": "number" },
+        "answersSummary": { "type": "array" },
+        "submittedToTeacher": { "type": "boolean" },
+        "submittedAt": { "type": "string", "maxLength": 64 },
+        "teacherNote": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "ownerUid",
+        "studentName",
+        "gameId",
+        "gameTitleEs",
+        "world",
+        "totalQuestions",
+        "correctCount",
+        "incorrectCount",
+        "score",
+        "accuracyPercent",
+        "durationSec",
+        "answersSummary",
+        "submittedToTeacher",
+        "submittedAt",
+        "teacherNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "VoiceRecording": {
+      "title": "VoiceRecording",
+      "description": "Student voice response metadata and teacher review state.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-zA-Z0-9_\\-]+$", "minLength": 1, "maxLength": 128 },
+        "studentId": { "type": "string", "enum": ["razmik", "gayane"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "studentName": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "world": { "type": "string", "enum": ["aeropuerto", "hotel", "restaurante", "supermercado", "todos"] },
+        "gameId": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "questionEs": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "transcriptEs": { "type": "string", "maxLength": 1000 },
+        "aiSuggestionEs": { "type": "string", "maxLength": 400 },
+        "storagePath": { "type": "string", "maxLength": 250 },
+        "hasFirestoreAudio": { "type": "boolean" },
+        "durationSec": { "type": "number" },
+        "mimeType": { "type": "string", "maxLength": 60 },
+        "status": { "type": "string", "enum": ["pending", "reviewed"] },
+        "verdict": { "type": "string", "enum": ["none", "correcto", "necesita_practicar"] },
+        "teacherComment": { "type": "string", "maxLength": 500 },
+        "teacherPoints": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "reviewedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "ownerUid",
+        "studentName",
+        "world",
+        "gameId",
+        "questionEs",
+        "transcriptEs",
+        "aiSuggestionEs",
+        "storagePath",
+        "hasFirestoreAudio",
+        "durationSec",
+        "mimeType",
+        "status",
+        "verdict",
+        "teacherComment",
+        "teacherPoints",
+        "createdAt",
+        "updatedAt",
+        "reviewedAt"
+      ]
+    },
+    "RecordingAudioBlob": {
+      "title": "RecordingAudioBlob",
+      "description": "Protected binary audio payload accessible only to the owning student and teacher.",
+      "type": "object",
+      "properties": {
+        "recordingId": { "type": "string", "pattern": "^[a-zA-Z0-9_\\-]+$", "minLength": 1, "maxLength": 128 },
+        "studentId": { "type": "string", "enum": ["razmik", "gayane"] },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "audioBase64": { "type": "string", "minLength": 1, "maxLength": 650000 },
+        "mimeType": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recordingId", "studentId", "ownerUid", "audioBase64", "mimeType", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Verified teacher admin records."
+    },
+    "/access_codes/{codeHash}": {
+      "schema": { "$ref": "#/entities/AccessCodeRecord" },
+      "description": "SHA-256 hashed access codes issued by the teacher."
+    },
+    "/teacher_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/TeacherCodesSettings" },
+      "description": "Private teacher settings and code labels."
+    },
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Authenticated user role bindings."
+    },
+    "/student_progress/{studentId}": {
+      "schema": { "$ref": "#/entities/StudentProgress" },
+      "description": "Persistent learning state for razmik and gayane."
+    },
+    "/leaderboard/{studentId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Aggregated RAZMIK VS GAYANE competition stats."
+    },
+    "/game_sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/GameSession" },
+      "description": "Completed quiz and game round history."
+    },
+    "/voice_recordings/{recordingId}": {
+      "schema": { "$ref": "#/entities/VoiceRecording" },
+      "description": "Student voice recording submissions and teacher grades."
+    },
+    "/recordings_audio/{recordingId}": {
+      "schema": { "$ref": "#/entities/RecordingAudioBlob" },
+      "description": "Protected audio payload documents (no public links)."
+    }
+  }
+}
