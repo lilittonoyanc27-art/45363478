@@ -212,12 +212,12 @@ export interface AppStorageState {
 }
 
 export const ASSETS = {
-  razmikAvatar: '/src/assets/images/razmik_avatar_1794758458203.jpg',
-  gayaneAvatar: '/src/assets/images/gayane_avatar_1794758456359.jpg',
-  airport: '/src/assets/images/world_airport_1794758457693.jpg',
-  hotel: '/src/assets/images/world_hotel_1794758457787.jpg',
-  restaurant: '/src/assets/images/world_restaurant_1794758457773.jpg',
-  supermarket: '/src/assets/images/world_supermarket_1794758459198.jpg',
+  razmikAvatar: '/images/razmik.svg',
+  gayaneAvatar: '/images/gayane.svg',
+  airport: '/images/airport.svg',
+  hotel: '/images/hotel.svg',
+  restaurant: '/images/restaurant.svg',
+  supermarket: '/images/supermarket.svg',
 };
 
 export interface GameCatalogEntry {
