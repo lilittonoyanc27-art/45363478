@@ -26,7 +26,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { deleteObject, getBlob, getStorage, ref, uploadBytes } from 'firebase/storage';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from './firebase-applet-config.json';
 import {
   CloudAnswerSummary,
   CloudGameSession,
