@@ -212,8 +212,8 @@ export interface AppStorageState {
 }
 
 export const ASSETS = {
-  razmikAvatar: '/images/razmik.svg',
-  gayaneAvatar: '/images/gayane.svg',
+  razmikAvatar: '/images/razmik-2026.svg',
+  gayaneAvatar: '/images/gayane-2026.svg',
   airport: '/images/airport.svg',
   hotel: '/images/hotel.svg',
   restaurant: '/images/restaurant.svg',
