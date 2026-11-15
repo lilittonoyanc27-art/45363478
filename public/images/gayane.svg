@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="440" viewBox="0 0 640 440" role="img" aria-label="GAYANE"><defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#FCE3F4"/><stop offset="1" stop-color="#F69BCB"/></linearGradient><linearGradient id="top" x2="0" y2="1"><stop stop-color="#BE54B5"/><stop offset="1" stop-color="#BE54B5" stop-opacity=".82"/></linearGradient></defs>
+<rect width="640" height="440" rx="34" fill="url(#bg)"/>
+<circle cx="502" cy="85" r="118" fill="#fff" opacity=".13"/><circle cx="89" cy="330" r="127" fill="#fff" opacity=".10"/>
+<path d="M0 378 Q148 315 303 393 T640 364 V440 H0Z" fill="#fff" opacity=".13"/>
+<ellipse cx="289" cy="423" rx="208" ry="30" fill="#132449" opacity=".13"/>
+<path d="M84 446 Q108 303 214 303 L253 283 L340 283 L381 303 Q490 303 517 446 Z" fill="url(#top)"/>
+<path d="M242 278 L241 323 Q289 350 339 321 L339 278Z" fill="#F3B69D"/>
+<path d="M191 293 Q157 231 177 142 Q190 75 263 67 Q360 52 402 132 Q426 189 402 284 L365 306 L346 193 L213 193 L209 311 Z" fill="#39263C"/>
+<ellipse cx="288" cy="187" rx="103" ry="119" fill="#F3B69D"/>
+<ellipse cx="185" cy="192" rx="14" ry="25" fill="#F3B69D"/><ellipse cx="390" cy="192" rx="14" ry="25" fill="#F3B69D"/>
+<path d="M193 163 Q195 75 289 74 Q377 74 390 162 Q365 127 345 113 Q291 151 217 151 L208 201 Z" fill="#39263C"/>
+<path d="M241 195 Q258 184 275 195" stroke="#42283A" stroke-width="6" fill="none" stroke-linecap="round"/>
+<path d="M310 195 Q327 184 344 195" stroke="#42283A" stroke-width="6" fill="none" stroke-linecap="round"/>
+<circle cx="259" cy="207" r="6.5" fill="#17233c"/><circle cx="326" cy="207" r="6.5" fill="#17233c"/>
+<ellipse cx="219" cy="242" rx="18" ry="10" fill="#E78384" opacity=".30"/><ellipse cx="358" cy="242" rx="18" ry="10" fill="#E78384" opacity=".30"/>
+<path d="M291 216 L285 238 Q290 242 300 237" stroke="#CC867A" stroke-width="4" fill="none" stroke-linecap="round"/>
+<path d="M265 258 Q291 278 317 257" fill="none" stroke="#9C4A62" stroke-width="6" stroke-linecap="round"/>
+<path d="M244 300 L288 340 L338 300" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".75"/>
+<path d="M398 186 Q421 214 412 274" stroke="#39263C" stroke-width="27" fill="none" stroke-linecap="round"/>
+<rect x="191" y="374" width="195" height="39" rx="19" fill="#ffffff" opacity=".90"/>
+<text x="288" y="400" font-family="Arial, sans-serif" font-size="26" font-weight="bold" text-anchor="middle" fill="#263257">GAYANE</text></svg>
